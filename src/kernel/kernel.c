@@ -1,5 +1,5 @@
 void cpu_idle() {
-    __asm__ __volatile__ ("hlt");
+    for (;;) __asm__ __volatile__ ("hlt");
 }
 
 void kernel_main () {
