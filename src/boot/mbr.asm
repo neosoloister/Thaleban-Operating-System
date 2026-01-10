@@ -2,9 +2,11 @@
 [org 0x7c00]
 
 start:
+    ; Zeroing
     xor ax, ax
     mov ds, ax
     mov es, ax
+    ; Setting Stack
     mov ss, ax
     mov sp, 0x7c00
 
