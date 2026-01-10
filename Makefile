@@ -15,6 +15,8 @@ BUILD_DIR = build
 # Targets
 KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
 KERNEL_OBJ = $(BUILD_DIR)/kernel.o
+KERNEL_ENTRY_SRC = $(SRC_DIR)/boot/kernel_entry.asm
+KERNEL_ENTRY_OBJ = $(BUILD_DIR)/kernel_entry.o
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 MBR_SRC = $(SRC_DIR)/boot/mbr.asm
 MBR_BIN = $(BUILD_DIR)/mbr.bin
@@ -29,6 +31,7 @@ run: $(OS_IMAGE)
 
 $(OS_IMAGE): $(MBR_BIN) $(STAGE2_BIN) $(KERNEL_BIN)
 	cat $^ > $@
+	dd if=/dev/zero bs=512 count=64 >> $@
 
 $(MBR_BIN): $(MBR_SRC)
 	@mkdir -p $(BUILD_DIR)
@@ -38,7 +41,11 @@ $(STAGE2_BIN): $(STAGE2_SRC)
 	@mkdir -p $(BUILD_DIR)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
-$(KERNEL_BIN): $(KERNEL_OBJ)
+$(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_SRC)
+	@mkdir -p $(BUILD_DIR)
+	$(ASM) -f elf32 $< -o $@
+
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ)
 	$(LD) -o $@ -Ttext 0x1000 $^ --oformat binary
 
 $(KERNEL_OBJ): $(KERNEL_SRC)

@@ -1,7 +1,14 @@
 [bits 16]
 [org 0x7e00]
+KERNEL_OFFSET equ 0x1000
 
 start:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7e00
+
     mov si, stage2_msg
     call print_string
 
@@ -11,6 +18,27 @@ start:
     out 0x92, al
 
     mov si, a20_msg
+    call print_string
+
+    ; Reset Disk
+    mov ah, 0
+    mov dl, 0x80
+    int 0x13
+    jc error
+
+    ; Load Kernel
+    mov bx, KERNEL_OFFSET
+    mov dh, 0
+    mov dl, 0x80
+    mov ch, 0
+    mov cl, 3
+    mov al, 5
+    mov ah, 0x02
+    int 0x13
+    
+    jc error
+
+    mov si, kernel_load_msg
     call print_string
 
     ; Load GDT
@@ -26,6 +54,11 @@ start:
 
     jmp CODE_SEG:init_pm
 
+error:
+    mov si, disk_error_msg
+    call print_string
+    jmp $
+
 [bits 32]
 init_pm:
     mov ax, DATA_SEG
@@ -38,17 +71,7 @@ init_pm:
     mov ebp, 0x90000
     mov esp, ebp
 
-    ; Print "P" to video memory (0xb8000) to confirm PM
-    mov byte [0xb8000], '3'
-    mov byte [0xb8001], 0x0f ; White on black
-    mov byte [0xb8002], '2'
-    mov byte [0xb8003], 0x0f ; White on black
-    mov byte [0xb8004], 'B'
-    mov byte [0xb8005], 0x0f ; White on black
-    mov byte [0xb8006], 'I'
-    mov byte [0xb8007], 0x0f ; White on black
-    mov byte [0xb8008], 'T'
-    mov byte [0xb8009], 0x0f ; White on black
+    call KERNEL_OFFSET
 
     jmp $
 
@@ -103,3 +126,7 @@ DATA_SEG equ gdt_data - gdt_start
 stage2_msg: db "STAGE2 LOADED", 13, 10, 0
 a20_msg: db "A20 ENABLED", 13, 10, 0
 gdt_msg: db "GDT LOADED", 13, 10, 0
+kernel_load_msg: db "KERNEL LOADED", 13, 10, 0
+disk_error_msg: db "DISK ERROR", 13, 10, 0
+
+times 512-($-$$) db 0

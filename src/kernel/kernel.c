@@ -1,4 +1,7 @@
-void kernel_main() {
-    char* video_memory = (char*) 0xb8000;
-    *video_memory = 'X';
+void cpu_idle() {
+    __asm__ __volatile__ ("hlt");
+}
+
+void kernel_main () {
+    cpu_idle();
 }
