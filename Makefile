@@ -13,8 +13,12 @@ SRC_DIR = src
 BUILD_DIR = build
 
 # Targets
+# Targets
 KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
 KERNEL_OBJ = $(BUILD_DIR)/kernel.o
+DRIVERS_SRC = $(wildcard $(SRC_DIR)/drivers/*.c)
+DRIVERS_OBJ = $(patsubst $(SRC_DIR)/drivers/%.c, $(BUILD_DIR)/%.o, $(DRIVERS_SRC))
+
 KERNEL_ENTRY_SRC = $(SRC_DIR)/boot/kernel_entry.asm
 KERNEL_ENTRY_OBJ = $(BUILD_DIR)/kernel_entry.o
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
@@ -45,10 +49,14 @@ $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_SRC)
 	@mkdir -p $(BUILD_DIR)
 	$(ASM) -f elf32 $< -o $@
 
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ)
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ)
 	$(LD) -o $@ -Ttext 0x1000 $^ --oformat binary
 
 $(KERNEL_OBJ): $(KERNEL_SRC)
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/drivers/%.c
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
