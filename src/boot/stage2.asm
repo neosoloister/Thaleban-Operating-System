@@ -14,9 +14,12 @@ start:
     call print_string
 
     ; Load GDT
-    cli
     lgdt [gdt_descriptor]
 
+    mov si, gdt_msg
+    call print_string
+
+    cli
     mov eax, cr0
     or eax, 1
     mov cr0, eax
@@ -99,3 +102,4 @@ DATA_SEG equ gdt_data - gdt_start
 
 stage2_msg: db "STAGE2 LOADED", 13, 10, 0
 a20_msg: db "A20 ENABLED", 13, 10, 0
+gdt_msg: db "GDT LOADED", 13, 10, 0
