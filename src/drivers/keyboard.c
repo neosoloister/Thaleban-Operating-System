@@ -3,6 +3,7 @@
 #include "../cpu/ports.h"
 #include "../cpu/isr.h"
 #include "../libc/kprintf.h"
+#include "../shell/shell.h"
 
 #include <stdbool.h>
 
@@ -158,16 +159,10 @@ static void keyboard_callback(registers_t *regs) {
     char c = mkeycode_to_utf8(mkey);
     
     if (c) {
-        // For visualization of control codes (temporary)
-        if (c < 32 && c > 0 && c != '\n' && c != '\t' && c != '\b') {
-             kprintf("^"); 
-             char k = c + '@'; // 1 ('\x01') + 64 = 65 ('A')
-             char str[2] = {k, '\0'};
-             kprintf(str);
-        } else {
-            char str[2] = {c, '\0'};
-            kprintf(str);
-        }
+        shell_input(c);
+        
+        // For visualization of control codes (temporary - moved to shell if needed, or kept separate)
+        // If c < 32 and not \n \t \b, shell might not handle it well yet, but let's pass it.
     }
     
     (void)regs;
