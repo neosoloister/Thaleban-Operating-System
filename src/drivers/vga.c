@@ -10,8 +10,12 @@ static uint8_t vga_attr(uint8_t fg, uint8_t bg) {
     return (bg << 4) | (fg & 0x0F);
 }
 
-unsigned int vga_index(uint8_t row, uint8_t column) {
+static unsigned int vga_index(uint8_t row, uint8_t column) {
     return row * VGA_WIDTH + column;
+}
+
+static uint16_t vga_entry(char c, uint8_t color) {
+    return (uint16_t)c | (uint16_t)color << 8;
 }
 
 void vga_set_color(uint8_t fg, uint8_t bg) {
@@ -21,10 +25,6 @@ void vga_set_color(uint8_t fg, uint8_t bg) {
 void vga_set_cursor(uint8_t row, uint8_t column) {
     cursor_row = row;
     cursor_column = column;
-}
-
-uint16_t vga_entry(char c, uint8_t color) {
-    return (uint16_t)c | (uint16_t)color << 8;
 }
 
 void vga_scroll() {

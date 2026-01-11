@@ -32,7 +32,7 @@ start:
     mov dl, 0x80
     mov ch, 0
     mov cl, 3
-    mov al, 5
+    mov al, 50
     mov ah, 0x02
     int 0x13
     

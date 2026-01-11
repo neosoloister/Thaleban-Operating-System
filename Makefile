@@ -40,6 +40,8 @@ MBR_BIN = $(BUILD_DIR)/mbr.bin
 STAGE2_SRC = $(SRC_DIR)/boot/stage2.asm
 STAGE2_BIN = $(BUILD_DIR)/stage2.bin
 OS_IMAGE = $(BUILD_DIR)/os-image.bin
+INTERRUPT_SRC = $(SRC_DIR)/cpu/interrupt.asm
+INTERRUPT_OBJ = $(BUILD_DIR)/interrupt.o
 
 all: $(OS_IMAGE)
 
@@ -61,7 +63,11 @@ $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_SRC)
 	-$(MKDIR) $(BUILD_DIR)
 	$(ASM) -f elf32 $< -o $@
 
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ) $(CPU_OBJ)
+$(INTERRUPT_OBJ): $(INTERRUPT_SRC)
+	-$(MKDIR) $(BUILD_DIR)
+	$(ASM) -f elf32 $< -o $@
+
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ) $(CPU_OBJ) $(INTERRUPT_OBJ)
 	$(LD) -o $@ -Ttext 0x1000 $^ --oformat binary
 
 $(KERNEL_OBJ): $(KERNEL_SRC)
