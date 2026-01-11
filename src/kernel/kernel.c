@@ -7,6 +7,7 @@ void cpu_idle() {
 void kernel_main() {
     vga_clear();
     kprintf("Thaleban Operating System.");
+    set_idt();
 
     char c = 'A';
     char *s = "Hello";

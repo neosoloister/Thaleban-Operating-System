@@ -29,6 +29,8 @@ DRIVERS_SRC = $(wildcard $(SRC_DIR)/drivers/*.c)
 DRIVERS_OBJ = $(patsubst $(SRC_DIR)/drivers/%.c, $(BUILD_DIR)/%.o, $(DRIVERS_SRC))
 LIBC_SRC = $(wildcard $(SRC_DIR)/libc/*.c)
 LIBC_OBJ = $(patsubst $(SRC_DIR)/libc/%.c, $(BUILD_DIR)/%.o, $(LIBC_SRC))
+CPU_SRC = $(wildcard $(SRC_DIR)/cpu/*.c)
+CPU_OBJ = $(patsubst $(SRC_DIR)/cpu/%.c, $(BUILD_DIR)/%.o, $(CPU_SRC))
 
 KERNEL_ENTRY_SRC = $(SRC_DIR)/boot/kernel_entry.asm
 KERNEL_ENTRY_OBJ = $(BUILD_DIR)/kernel_entry.o
@@ -59,7 +61,7 @@ $(KERNEL_ENTRY_OBJ): $(KERNEL_ENTRY_SRC)
 	-$(MKDIR) $(BUILD_DIR)
 	$(ASM) -f elf32 $< -o $@
 
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ)
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ) $(CPU_OBJ)
 	$(LD) -o $@ -Ttext 0x1000 $^ --oformat binary
 
 $(KERNEL_OBJ): $(KERNEL_SRC)
@@ -71,6 +73,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/drivers/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/libc/%.c
+	-$(MKDIR) $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/cpu/%.c
 	-$(MKDIR) $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
