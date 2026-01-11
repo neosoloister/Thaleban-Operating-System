@@ -42,6 +42,17 @@ void vga_putch(char c) {
         cursor_column = 0;
         cursor_row++;
     } 
+    else if (c == '\b') {
+        if (cursor_column == 0) {
+            if (cursor_row > 0) {
+                cursor_row--;
+                cursor_column = VGA_WIDTH - 1;
+            }
+        } else {
+            cursor_column--;
+        }
+        VGA[vga_index(cursor_row, cursor_column)] = vga_entry(' ', VGA_ATTR);
+    }
     else {
         VGA[vga_index(cursor_row, cursor_column)] = vga_entry(c, VGA_ATTR);
         cursor_column++;
@@ -50,6 +61,7 @@ void vga_putch(char c) {
             cursor_row++;
         }
     }
+
     if (cursor_row >= VGA_HEIGHT) {
         vga_scroll();
     }
