@@ -3,6 +3,7 @@
 #include "../libc/string.h"
 #include "../cpu/ports.h"
 #include "../drivers/vga.h"
+#include "../libc/malloc.h"
 
 #define MAX_COMMAND_LEN 256
 
@@ -30,6 +31,8 @@ static void cmd_help() {
     kprintf("shutdown - Shutdown system\n");
     kprintf("reboot - Reboot system\n");
     kprintf("echo [text] - Echo text\n");
+
+    kprintf("mstats - Show memory statistics\n");
 }
 
 static void cmd_clear() {
@@ -69,6 +72,10 @@ static void cmd_echo(char *input) {
     kprintf("\n");
 }
 
+
+
+
+
 static void process_command(char *input) {
     if (strcmp(input, "help") == 0) {
         cmd_help();
@@ -85,6 +92,10 @@ static void process_command(char *input) {
     else if (strcmp(input, "reboot") == 0) {
         cmd_reboot();
     }
+    else if (strcmp(input, "mstats") == 0) {
+        mstats();
+    }
+
     else if (strncmp(input, "echo", 4) == 0 && (input[4] == '\0' || input[4] == ' ')) {
         cmd_echo(input);
     }

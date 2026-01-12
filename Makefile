@@ -84,6 +84,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/libc/%.c
 	-$(MKDIR) $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+$(BUILD_DIR)/malloc.o: $(SRC_DIR)/libc/malloc.c
+	-$(MKDIR) $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(BUILD_DIR)/%.o: $(SRC_DIR)/cpu/%.c
 	-$(MKDIR) $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
