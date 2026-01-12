@@ -18,7 +18,10 @@ void kernel_main() {
     // Initialize Heap at 0x100000 (1MB) with 16MB size
     init_heap(0x100000, 16 * 1024 * 1024);
 
+    for (int i = 0; i < 10; i++) {
+        malloc(1024);
+    }
+
     shell_init();
-    
     cpu_idle();
 }

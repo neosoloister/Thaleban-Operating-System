@@ -2,7 +2,7 @@
 #include "vga.h"
 #include "../cpu/ports.h"
 #include "../cpu/isr.h"
-#include "../libc/kprintf.h"
+#include "../kernel/kprintf.h"
 #include "../shell/shell.h"
 
 #include <stdbool.h>

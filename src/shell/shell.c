@@ -1,5 +1,5 @@
 #include "shell.h"
-#include "../libc/kprintf.h"
+#include "../kernel/kprintf.h"
 #include "../libc/string.h"
 #include "../cpu/ports.h"
 #include "../drivers/vga.h"
@@ -28,7 +28,7 @@ static void cmd_help() {
     kprintf("help - Show this message\n");
     kprintf("clear - Clear screen\n");
     kprintf("credit - Show credits\n");
-    kprintf("shutdown - Shutdown system\n");
+    kprintf("poweroff - Poweroff system\n");
     kprintf("reboot - Reboot system\n");
     kprintf("echo [text] - Echo text\n");
 
@@ -46,7 +46,7 @@ static void cmd_credit() {
     kprintf("=========================\n");
 }
 
-static void cmd_shutdown() {
+static void cmd_poweroff() {
     kprintf("Shutting down...\n");
     // QEMU
     port_word_out(0x604, 0x2000);
@@ -86,8 +86,8 @@ static void process_command(char *input) {
     else if (strcmp(input, "credit") == 0) {
         cmd_credit();
     }
-    else if (strcmp(input, "shutdown") == 0) {
-        cmd_shutdown();
+    else if (strcmp(input, "poweroff") == 0) {
+        cmd_poweroff();
     }
     else if (strcmp(input, "reboot") == 0) {
         cmd_reboot();

@@ -23,8 +23,8 @@ BUILD_DIR = build
 TOOLS_DIR = tools
 
 # Targets
-KERNEL_SRC = $(SRC_DIR)/kernel/kernel.c
-KERNEL_OBJ = $(BUILD_DIR)/kernel.o
+KERNEL_SRC = $(wildcard $(SRC_DIR)/kernel/*.c)
+KERNEL_OBJ = $(patsubst $(SRC_DIR)/kernel/%.c, $(BUILD_DIR)/%.o, $(KERNEL_SRC))
 DRIVERS_SRC = $(wildcard $(SRC_DIR)/drivers/*.c)
 DRIVERS_OBJ = $(patsubst $(SRC_DIR)/drivers/%.c, $(BUILD_DIR)/%.o, $(DRIVERS_SRC))
 LIBC_SRC = $(wildcard $(SRC_DIR)/libc/*.c)
@@ -72,7 +72,7 @@ $(INTERRUPT_OBJ): $(INTERRUPT_SRC)
 $(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ) $(CPU_OBJ) $(SHELL_OBJ) $(INTERRUPT_OBJ)
 	$(LD) -o $@ -Ttext 0x1000 $^ --oformat binary
 
-$(KERNEL_OBJ): $(KERNEL_SRC)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/kernel/%.c
 	-$(MKDIR) $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 

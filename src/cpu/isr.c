@@ -1,7 +1,7 @@
 #include "isr.h"
 #include "idt.h"
 #include "ports.h"
-#include "../libc/kprintf.h"
+#include "../kernel/kprintf.h"
 
 // Extern ISR Assembly
 extern void isr0();
