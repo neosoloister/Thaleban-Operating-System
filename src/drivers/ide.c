@@ -18,38 +18,43 @@ void ide_select_drive(uint8_t bus, uint8_t drive) {
     port_byte_out(base + 6, 0xE0 | ((drive & 0x01) << 4));
 }
 
-void ide_read_sector(uint32_t lba, uint8_t *buffer) {
+void ide_read_disk(uint8_t bus, uint8_t drive, uint32_t lba, uint8_t *buffer) {
     ide_wait_ready();
-    ide_select_drive(ATA_PRIMARY, 0); // Always selecting Primary Master for now
+    ide_select_drive(bus, drive);
     
-    port_byte_out(ATA_PRIMARY_IO + 2, 1);   // Sector count
-    port_byte_out(ATA_PRIMARY_IO + 3, (uint8_t)lba);
-    port_byte_out(ATA_PRIMARY_IO + 4, (uint8_t)(lba >> 8));
-    port_byte_out(ATA_PRIMARY_IO + 5, (uint8_t)(lba >> 16));
-    port_byte_out(ATA_PRIMARY_IO + 7, ATA_CMD_READ_PIO);
+    // Choose IO port based on bus
+    uint16_t base = (bus == ATA_PRIMARY) ? ATA_PRIMARY_IO : ATA_SECONDARY_IO;
+
+    port_byte_out(base + 2, 1);   // Sector count
+    port_byte_out(base + 3, (uint8_t)lba);
+    port_byte_out(base + 4, (uint8_t)(lba >> 8));
+    port_byte_out(base + 5, (uint8_t)(lba >> 16));
+    port_byte_out(base + 7, ATA_CMD_READ_PIO);
 
     ide_wait_ready();
 
     uint16_t *ptr = (uint16_t *)buffer;
     for (int i = 0; i < 256; i++) {
-        ptr[i] = port_word_in(ATA_PRIMARY_IO);
+        ptr[i] = port_word_in(base);
     }
 }
 
-void ide_write_sector(uint32_t lba, uint8_t *buffer) {
+void ide_write_disk(uint8_t bus, uint8_t drive, uint32_t lba, uint8_t *buffer) {
     ide_wait_ready();
-    ide_select_drive(ATA_PRIMARY, 0);
+    ide_select_drive(bus, drive);
+    
+    uint16_t base = (bus == ATA_PRIMARY) ? ATA_PRIMARY_IO : ATA_SECONDARY_IO;
 
-    port_byte_out(ATA_PRIMARY_IO + 2, 1);   // Sector count
-    port_byte_out(ATA_PRIMARY_IO + 3, (uint8_t)lba);
-    port_byte_out(ATA_PRIMARY_IO + 4, (uint8_t)(lba >> 8));
-    port_byte_out(ATA_PRIMARY_IO + 5, (uint8_t)(lba >> 16));
-    port_byte_out(ATA_PRIMARY_IO + 7, ATA_CMD_WRITE_PIO);
+    port_byte_out(base + 2, 1);   // Sector count
+    port_byte_out(base + 3, (uint8_t)lba);
+    port_byte_out(base + 4, (uint8_t)(lba >> 8));
+    port_byte_out(base + 5, (uint8_t)(lba >> 16));
+    port_byte_out(base + 7, ATA_CMD_WRITE_PIO);
 
     ide_wait_ready();
 
     uint16_t *ptr = (uint16_t *)buffer;
     for (int i = 0; i < 256; i++) {
-        port_word_out(ATA_PRIMARY_IO, ptr[i]);
+        port_word_out(base, ptr[i]);
     }
 }

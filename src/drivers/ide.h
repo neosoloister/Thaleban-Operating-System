@@ -23,7 +23,7 @@
 
 void ide_wait_ready();
 void ide_select_drive(uint8_t bus, uint8_t drive);
-void ide_read_sector(uint32_t lba, uint8_t *buffer);
-void ide_write_sector(uint32_t lba, uint8_t *buffer);
+void ide_read_disk(uint8_t bus, uint8_t drive, uint32_t lba, uint8_t *buffer);
+void ide_write_disk(uint8_t bus, uint8_t drive, uint32_t lba, uint8_t *buffer);
 
 #endif

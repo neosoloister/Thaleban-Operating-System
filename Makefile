@@ -33,6 +33,8 @@ CPU_SRC = $(wildcard $(SRC_DIR)/cpu/*.c)
 CPU_OBJ = $(patsubst $(SRC_DIR)/cpu/%.c, $(BUILD_DIR)/%.o, $(CPU_SRC))
 SHELL_SRC = $(wildcard $(SRC_DIR)/shell/*.c)
 SHELL_OBJ = $(patsubst $(SRC_DIR)/shell/%.c, $(BUILD_DIR)/%.o, $(SHELL_SRC))
+FS_SRC = $(wildcard $(SRC_DIR)/fs/*.c)
+FS_OBJ = $(patsubst $(SRC_DIR)/fs/%.c, $(BUILD_DIR)/%.o, $(FS_SRC))
 
 KERNEL_ENTRY_SRC = $(SRC_DIR)/boot/kernel_entry.asm
 KERNEL_ENTRY_OBJ = $(BUILD_DIR)/kernel_entry.o
@@ -45,10 +47,14 @@ OS_IMAGE = $(BUILD_DIR)/os-image.bin
 INTERRUPT_SRC = $(SRC_DIR)/cpu/interrupt.asm
 INTERRUPT_OBJ = $(BUILD_DIR)/interrupt.o
 
-all: $(OS_IMAGE)
+all: $(OS_IMAGE) $(BUILD_DIR)/fs.img
 
-run: $(OS_IMAGE)
-	qemu-system-i386 -hda $(OS_IMAGE)
+run: $(OS_IMAGE) $(BUILD_DIR)/fs.img
+	qemu-system-i386 -hda $(OS_IMAGE) -drive file=$(BUILD_DIR)/fs.img,format=raw,index=1,media=disk
+
+$(BUILD_DIR)/fs.img: $(TOOLS_DIR)/mkfs.py
+	-$(MKDIR) $(BUILD_DIR)
+	python3 $(TOOLS_DIR)/mkfs.py $@
 
 $(OS_IMAGE): $(MBR_BIN) $(STAGE2_BIN) $(KERNEL_BIN)
 	python3 $(TOOLS_DIR)/build_image.py $@ $^
@@ -69,7 +75,7 @@ $(INTERRUPT_OBJ): $(INTERRUPT_SRC)
 	-$(MKDIR) $(BUILD_DIR)
 	$(ASM) -f elf32 $< -o $@
 
-$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ) $(CPU_OBJ) $(SHELL_OBJ) $(INTERRUPT_OBJ)
+$(KERNEL_BIN): $(KERNEL_ENTRY_OBJ) $(KERNEL_OBJ) $(DRIVERS_OBJ) $(LIBC_OBJ) $(CPU_OBJ) $(SHELL_OBJ) $(INTERRUPT_OBJ) $(FS_OBJ)
 	$(LD) -o $@ -Ttext 0x1000 $^ --oformat binary
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/kernel/%.c
@@ -93,6 +99,10 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/cpu/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/shell/%.c
+	-$(MKDIR) $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/fs/%.c
 	-$(MKDIR) $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
