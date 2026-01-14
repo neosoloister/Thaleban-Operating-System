@@ -1,4 +1,5 @@
 #include "string.h"
+#include <stdint.h>
 
 int strcmp(const char *s1, const char *s2) {
     while (*s1 && (*s1 == *s2)) {
@@ -52,4 +53,12 @@ int memcmp(const void *s1, const void *s2, uint32_t n) {
         }
     }
     return 0;
+}
+
+uint32_t strlen(const char *s) {
+    uint32_t len = 0;
+    while (*s++) {
+        len++;
+    }
+    return len;
 }

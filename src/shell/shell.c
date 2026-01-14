@@ -34,6 +34,7 @@ static void cmd_help() {
     kprintf("echo [text] - Echo text\n");
 
     kprintf("mstats - Show memory statistics\n");
+    
     kprintf("ls - List files\n");
     kprintf("cd [dir] - Change directory\n");
     kprintf("cat [file] - Read file\n");
@@ -41,6 +42,7 @@ static void cmd_help() {
     kprintf("mkdir [dir] - Create directory\n");
     kprintf("cp [src] [dst] - Copy file\n");
     kprintf("mv [src] [dst] - Move/Rename file\n");
+    kprintf("write \"[text]\" [dst] - Write text to file\n");
 }
 
 static void cmd_clear() {
@@ -180,11 +182,35 @@ static void cmd_mv(char *input) {
     else kprintf("Error moving file.\n");
 }
 
+static void cmd_write(char *input) {
+    char *p = input + 5;
+    if (*p == 0 || *p != ' ') { kprintf("Usage: write \"<text>\" <dest>\n"); return; }
+    while(*p == ' ') p++;
+    
+    if (*p != '"') { kprintf("Usage: write \"<text>\" <dest>\n"); return; }
+    p++; // Skip opening quote
+    char *src = p;
+    
+    while(*p != '"' && *p != 0) p++;
+    if (*p == 0) { kprintf("Unterminated string literal.\n"); kprintf("Usage: write \"<text>\" <dest>\n"); return; }
+    *p = 0; // Null-terminate the string
+    p++;
+    
+    while(*p == ' ') p++;
+    if (*p == 0) { kprintf("Missing destination filename.\n"); kprintf("Usage: write \"<text>\" <dest>\n"); return; }
+    char *dest = p;
+    
+    if (fat_write(src, dest) == 0) {
+        kprintf("File written.\n");
+    } else {
+        kprintf("Error writing file.\n");
+    }
+}
 
 
 
-static void process_command(char *input) {
-    if (strcmp(input, "help") == 0) {
+
+static void process_command(char *input) {    if (strcmp(input, "help") == 0) {
         cmd_help();
     } 
     else if (strcmp(input, "clear") == 0) {
@@ -219,6 +245,7 @@ static void process_command(char *input) {
     else if (strncmp(input, "mkdir", 5) == 0) cmd_mkdir(input);
     else if (strncmp(input, "cp", 2) == 0) cmd_cp(input);
     else if (strncmp(input, "mv", 2) == 0) cmd_mv(input);
+    else if (strncmp(input, "write", 5) == 0) cmd_write(input);
     else {
         kprintf("Unknown command: ");
         kprintf(input);

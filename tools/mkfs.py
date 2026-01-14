@@ -96,29 +96,6 @@ def main():
         
         hello_content = b"Hello from ThaleFS!\n"
         f.seek(root_offset)
-        f.write(create_root_entry(b'HELLO', b'TXT', 0x20, 2, len(hello_content)))
-        
-        f.write(create_root_entry(b'DOCS', b'   ', 0x10, 3, 0))
-        
-        root_sectors = (ROOT_ENTRIES * 32) // SECTOR_SIZE
-        data_offset = root_offset + (root_sectors * SECTOR_SIZE)
-        
-        def write_cluster(cluster_num, data):
-            offset = data_offset + ((cluster_num - 2) * SECTOR_SIZE * SECTORS_PER_CLUSTER)
-            f.seek(offset)
-            f.write(data)
-            
-        write_cluster(2, hello_content)
-        
-        docs_content = bytearray()
-        docs_content.extend(create_root_entry(b'.', b'   ', 0x10, 3, 0))
-        docs_content.extend(create_root_entry(b'..', b'   ', 0x10, 0, 0))
-        
-        readme_content = b"This is a file inside DOCS directory.\n"
-        docs_content.extend(create_root_entry(b'README', b'TXT', 0x20, 4, len(readme_content)))
-        
-        write_cluster(3, docs_content)
-        write_cluster(4, readme_content)
         
     print(f"Created FAT16 image at {output_path}")
 

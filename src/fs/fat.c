@@ -353,7 +353,15 @@ int fat_mv(const char *src, const char *dest) {
         for (int e = 0; e < 16; e++) {
             if (ent[e].filename[0] == 0) return -1;
             if (ent[e].filename[0] == 0xE5) continue;
-            if (memcmp(ent[e].filename, s_name, 8) == 0 && memcmp(ent[e].extension, s_ext, 3) == 0) {
+            
+            char entry_ext[3];
+            for(int x=0; x<3; x++) {
+                char c = ent[e].extension[x];
+                if (c >= 'A' && c <= 'Z') c += 32;
+                entry_ext[x] = c;
+            }
+
+            if (memcmp(ent[e].filename, s_name, 8) == 0 && memcmp(entry_ext, s_ext, 3) == 0) {
                  memcpy(ent[e].filename, d_name, 8);
                  memcpy(ent[e].extension, d_ext, 3);
                  write_cluster_sector(current_dir_cluster, s, buffer);
@@ -362,4 +370,65 @@ int fat_mv(const char *src, const char *dest) {
         }
     }
     return -1;
+}
+
+int fat_write(const char *src, const char *dest) {
+    char name[8], ext[3];
+    parse_filename(dest, name, ext);
+    
+    uint8_t buffer[512];
+    uint32_t sectors_to_scan = (current_dir_cluster == 0) ? (bpb.root_entries * 32) / 512 : bpb.sectors_per_cluster;
+    for (uint32_t s = 0; s < sectors_to_scan; s++) {
+        read_cluster_sector(current_dir_cluster, s, buffer);
+        fat_dir_entry_t *ent = (fat_dir_entry_t*)buffer;
+        for (int e = 0; e < 16; e++) {
+            if (ent[e].filename[0] == 0) {
+                goto end_of_search;
+            }
+            if (ent[e].filename[0] == 0xE5) continue;
+            
+            char entry_ext[3];
+            for(int x=0; x<3; x++) {
+                char c = ent[e].extension[x];
+                if (c >= 'A' && c <= 'Z') c += 32;
+                entry_ext[x] = c;
+            }
+
+            if (memcmp(ent[e].filename, name, 8) == 0 && memcmp(entry_ext, ext, 3) == 0) {
+                 uint32_t len = strlen(src);
+                 if (len > 512) len = 512;
+                 
+                 uint32_t cluster = find_free_cluster();
+                 if (cluster == 0) return -1;
+                 set_fat_entry(cluster, 0xFFFF);
+                 
+                 uint8_t content[512];
+                 memset(content, 0, 512);
+                 memcpy(content, src, len);
+                 write_cluster_sector(cluster, 0, content);
+                 
+                 ent[e].first_cluster_low = cluster;
+                 ent[e].file_size = len;
+                 
+                 write_cluster_sector(current_dir_cluster, s, buffer);
+                 return 0; 
+            }
+        }
+    }
+end_of_search:;
+
+    uint32_t len = strlen(src);
+    if (len > 512) len = 512;
+    
+    uint32_t new_cluster = find_free_cluster();
+    if (new_cluster == 0) return -1;
+    set_fat_entry(new_cluster, 0xFFFF);
+    
+    uint8_t content[512];
+    memset(content, 0, 512);
+    memcpy(content, src, len);
+    
+    write_cluster_sector(new_cluster, 0, content);
+    
+    return create_entry(current_dir_cluster, name, ext, 0x20, new_cluster, len);
 }
