@@ -363,3 +363,110 @@ int fat_mv(const char *src, const char *dest) {
     }
     return -1;
 }
+
+int fat_delete_file(const char *filename) {
+    char name[8], ext[3];
+    parse_filename(filename, name, ext);
+    
+    fat_dir_entry_t entry;
+    // uint32_t sector_offset, entry_offset;
+    
+    // Find the entry to get its details (cluster)
+    if (find_entry(current_dir_cluster, name, ext, &entry) != 0) return -1;
+    
+    // Find the entry again but this time get its offset location so we can modify it
+    // if (find_dir_slot(current_dir_cluster, &entry, &sector_offset, &entry_offset, 0) != 0) {
+        
+        uint8_t buffer[512];
+        uint32_t sectors_to_scan = (current_dir_cluster == 0) ? (bpb.root_entries * 32) / 512 : bpb.sectors_per_cluster;
+        
+        int found = 0;
+        for (uint32_t s = 0; s < sectors_to_scan; s++) {
+             read_cluster_sector(current_dir_cluster, s, buffer);
+             fat_dir_entry_t *entries = (fat_dir_entry_t*)buffer;
+             for (int e = 0; e < 16; e++) {
+                 if (entries[e].filename[0] == 0) break; 
+                 if (entries[e].filename[0] == 0xE5) continue;
+                 
+                 if (memcmp(entries[e].filename, name, 8) == 0 && memcmp(entries[e].extension, ext, 3) == 0) {
+                     // Found it! Mark as deleted
+                     entries[e].filename[0] = 0xE5;
+                     write_cluster_sector(current_dir_cluster, s, buffer);
+                     found = 1;
+                     goto cleanup_clusters;
+                 }
+             }
+        }
+        if (!found) return -1;
+    // }
+
+cleanup_clusters:;
+    // Free the cluster chain
+    uint32_t cluster = entry.first_cluster_low;
+    while (cluster >= 2 && cluster < 0xFFF7) {
+        uint32_t fat_offset = cluster * 2;
+        uint32_t fat_sector = fat_start_sector + (fat_offset / 512);
+        uint32_t ent_offset = fat_offset % 512;
+        
+        uint8_t fat_buf[512];
+        read_sector(fat_sector, fat_buf);
+        uint16_t next_cluster = *(uint16_t*)&fat_buf[ent_offset];
+        
+        // precise single entry write update
+        set_fat_entry(cluster, 0x0000);
+        
+        cluster = next_cluster;
+    }
+    
+    return 0;
+}
+
+int fat_write_file(const char *filename, const char *buffer, uint32_t size) {
+    // simplistic implementation: delete if exists, then create new
+    fat_delete_file(filename);
+    
+    char name[8], ext[3];
+    parse_filename(filename, name, ext);
+    
+    // Allocate first cluster
+    uint32_t start_cluster = find_free_cluster();
+    if (start_cluster == 0) return -1;
+    
+    set_fat_entry(start_cluster, 0xFFFF);
+    
+    uint32_t current_cluster = start_cluster;
+    uint32_t bytes_written = 0;
+    
+    while (bytes_written < size) {
+        
+        // Write to current cluster, sector 0 (assuming we step cluster by cluster)
+        // If sectors_per_cluster > 1, we should fill all sectors.
+        // Let's assume for now we just use 1 sector of the cluster or simply allocate a new cluster for every 512 bytes 
+        // if sectors_per_cluster is small, OR validly loop sectors.
+        
+        // Let's try to fill the cluster.
+        for (int i = 0; i < bpb.sectors_per_cluster && bytes_written < size; i++) {
+             uint8_t sector_buf[512];
+             memset(sector_buf, 0, 512);
+             
+             uint32_t chunk = size - bytes_written;
+             if (chunk > 512) chunk = 512;
+             
+             memcpy(sector_buf, buffer + bytes_written, chunk);
+             write_cluster_sector(current_cluster, i, sector_buf);
+             bytes_written += chunk;
+        }
+        
+        if (bytes_written < size) {
+            // We need another cluster
+            uint32_t new_cluster = find_free_cluster();
+            if (new_cluster == 0) return -1; // Out of space
+            
+            set_fat_entry(current_cluster, new_cluster);
+            set_fat_entry(new_cluster, 0xFFFF);
+            current_cluster = new_cluster;
+        }
+    }
+    
+    return create_entry(current_dir_cluster, name, ext, 0x20, start_cluster, size);
+}

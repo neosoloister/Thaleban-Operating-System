@@ -63,5 +63,7 @@ int fat_touch(const char *filename);
 int fat_mkdir(const char *dirname);
 int fat_cp(const char *src, const char *dest);
 int fat_mv(const char *src, const char *dest);
+int fat_delete_file(const char *filename);
+int fat_write_file(const char *filename, const char *buffer, uint32_t size);
 
 #endif

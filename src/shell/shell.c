@@ -41,6 +41,8 @@ static void cmd_help() {
     kprintf("mkdir [dir] - Create directory\n");
     kprintf("cp [src] [dst] - Copy file\n");
     kprintf("mv [src] [dst] - Move/Rename file\n");
+    kprintf("write \"text\" [file] - Write to file\n");
+    kprintf("rm [file] - Remove file\n");
 }
 
 static void cmd_clear() {
@@ -180,6 +182,56 @@ static void cmd_mv(char *input) {
     else kprintf("Error moving file.\n");
 }
 
+static void cmd_write(char *input) {
+    // format: write "content" filename
+    char *p = input + 5;
+    while (*p == ' ') p++;
+    
+    if (*p != '"') {
+        kprintf("Usage: write \"string\" <filename>\n");
+        return;
+    }
+    p++; // skip opening quote
+    
+    char *start = p;
+    while (*p != '"' && *p != 0) p++;
+    
+    if (*p == 0) {
+        kprintf("Usage: write \"string\" <filename>\n");
+        return;
+    }
+    
+    *p = 0; // Terminate string
+    char *content = start;
+    
+    p++; // skip closing quote
+    while (*p == ' ') p++;
+    
+    if (*p == 0) {
+        kprintf("Usage: write \"string\" <filename>\n");
+        return;
+    }
+    char *filename = p;
+    
+    if (fat_write_file(filename, content, strlen(content)) == 0) {
+        kprintf("File written.\n");
+    } else {
+        kprintf("Error writing file.\n");
+    }
+}
+
+static void cmd_rm(char *input) {
+    if (input[2] != ' ') { kprintf("Usage: rm <file>\n"); return; }
+    char *filename = input + 3;
+    while(*filename == ' ') filename++;
+    
+    if (fat_delete_file(filename) == 0) {
+        kprintf("File deleted.\n");
+    } else {
+        kprintf("Error deleting file.\n");
+    }
+}
+
 
 
 
@@ -219,6 +271,8 @@ static void process_command(char *input) {
     else if (strncmp(input, "mkdir", 5) == 0) cmd_mkdir(input);
     else if (strncmp(input, "cp", 2) == 0) cmd_cp(input);
     else if (strncmp(input, "mv", 2) == 0) cmd_mv(input);
+    else if (strncmp(input, "write", 5) == 0) cmd_write(input);
+    else if (strncmp(input, "rm", 2) == 0) cmd_rm(input);
     else {
         kprintf("Unknown command: ");
         kprintf(input);

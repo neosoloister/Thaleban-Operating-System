@@ -27,6 +27,12 @@ char *strcpy(char *dest, const char *src) {
     return saved;
 }
 
+uint32_t strlen(const char *s) {
+    uint32_t l = 0;
+    while (*s++) l++;
+    return l;
+}
+
 void *memcpy(void *dest, const void *src, uint32_t n) {
     char *d = (char*)dest;
     const char *s = (const char*)src;
